@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth-helper";
 
 // GET /api/cart - Get user's cart
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login to view cart" },
                 { status: 401 }
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { email: authUser.email },
         });
 
         if (!user) {
@@ -84,9 +83,9 @@ export async function GET(request: NextRequest) {
 // POST /api/cart - Add item to cart
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login to add items" },
                 { status: 401 }
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { email: authUser.email },
         });
 
         if (!user) {
@@ -174,9 +173,9 @@ export async function POST(request: NextRequest) {
 // PUT /api/cart - Update cart item quantity
 export async function PUT(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login" },
                 { status: 401 }
@@ -218,9 +217,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/cart - Remove item from cart
 export async function DELETE(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login" },
                 { status: 401 }
@@ -233,7 +232,7 @@ export async function DELETE(request: NextRequest) {
 
         if (clearAll === "true") {
             const user = await prisma.user.findUnique({
-                where: { email: session.user.email },
+                where: { email: authUser.email },
             });
 
             if (user) {

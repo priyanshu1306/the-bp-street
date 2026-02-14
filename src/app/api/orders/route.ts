@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth-helper";
 
 // Generate unique order number
 function generateOrderNumber() {
@@ -13,9 +12,9 @@ function generateOrderNumber() {
 // GET /api/orders - Get user's orders
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login to view orders" },
                 { status: 401 }
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { email: authUser.email },
         });
 
         if (!user) {
@@ -72,9 +71,9 @@ export async function GET(request: NextRequest) {
 // POST /api/orders - Create a new order
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const authUser = await getAuthUser(request);
 
-        if (!session?.user?.email) {
+        if (!authUser?.email) {
             return NextResponse.json(
                 { error: "Please login to place order" },
                 { status: 401 }
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { email: authUser.email },
         });
 
         if (!user) {
