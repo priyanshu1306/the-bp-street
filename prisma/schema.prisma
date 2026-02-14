@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String    @unique
+  phone         String?
+  password      String
+  image         String?
+  role          String    @default("user") // "user" or "admin"
+  addresses     Address[]
+  orders        Order[]
+  cart          Cart?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Address {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String  @db.ObjectId
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label       String  // "Home", "Work", etc.
+  fullAddress String
+  landmark    String?
+  city        String
+  pincode     String
+  isDefault   Boolean @default(false)
+}
+
+model Product {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  price       Float
+  image       String?
+  category    String
+  isVeg       Boolean     @default(true)
+  isAvailable Boolean     @default(true)
+  isBestSeller Boolean    @default(false)
+  isTrending  Boolean     @default(false)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique @db.ObjectId
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  cartId    String  @db.ObjectId
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+}
+
+model Order {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber     String      @unique
+  userId          String      @db.ObjectId
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  paymentMethod   String      // "COD", "ONLINE"
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentId       String?     // Razorpay payment ID
+  deliveryAddress String
+  deliveryPhone   String
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String  @db.ObjectId
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  name      String  // Snapshot of product name at order time
+  price     Float   // Snapshot of price at order time
+  quantity  Int
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model EmailOTP {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
